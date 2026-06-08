@@ -1,0 +1,11 @@
+name: TypicalAgronomy
+version: '0.1'
+main: me.lazaara.typicalAgronomy.TypicalAgronomy
+api-version: '1.21'
+authors: [ Lazaara ]
+description: Like that one mod that every modpack likes to use
+website: https://github.com/Lazaara
+commands:
+  typicalagronomy:
+    usage: /typicalagronomy <subcommand>
+    description: Lệnh chính của TypicalAgronomy

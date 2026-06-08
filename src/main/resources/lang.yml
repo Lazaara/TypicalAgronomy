@@ -1,0 +1,13 @@
+messages:
+  typicalagronomy:
+    usage: "&cUsage: /typicalagronomy <items|reload>"
+  reload:
+    no-permission: "&cBạn không có quyền dùng lệnh này!"
+    success: "&aPlugin đã được reload thành công!"
+  getitem:
+    player-only: "&cLệnh này chỉ dành cho người chơi!"
+    no-permission: "&cBạn không có quyền dùng lệnh này!"
+    usage: "&cUsage: /typicalagronomy getitem <ID>"
+    invalid-id: "&cID không hợp lệ"
+    not-found: "&cID Không tồn tại"
+    item-not-exist: "&cItem không tồn tại!"

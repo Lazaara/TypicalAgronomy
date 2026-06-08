@@ -1,0 +1,5 @@
+# TypicalAgronomy Configuration
+# Placeholder - more settings will be added later
+
+general:
+  debug: false
