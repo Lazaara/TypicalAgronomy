@@ -6,7 +6,8 @@ public enum ItemCategory {
 
     SEEDS("Seeds", Material.WHEAT_SEEDS),
     ESSENCES("Essences", Material.GLOWSTONE_DUST),
-    STATIONS("Stations", Material.CRAFTING_TABLE);
+    STATIONS("Stations", Material.CRAFTING_TABLE),
+    MACHINES("Machines", Material.PISTON);
 
     private final String displayName;
     private final Material icon;

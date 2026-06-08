@@ -25,7 +25,7 @@ public class InferiorSeed extends CustomItem {
 
     @Override
     protected String getDisplayName() {
-        return ChatColor.WHITE + "Inferior Seed";
+        return ChatColor.GOLD + "Inferior Seed";
     }
 
 }

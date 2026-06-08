@@ -1,5 +1,6 @@
 package me.lazaara.typicalAgronomy.Items;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -17,7 +18,7 @@ public class InferiorEssence extends CustomItem {
 
     @Override
     protected String getDisplayName() {
-        return "Inferior Essence";
+        return ChatColor.GOLD + "Inferior Essence";
     }
 
 }

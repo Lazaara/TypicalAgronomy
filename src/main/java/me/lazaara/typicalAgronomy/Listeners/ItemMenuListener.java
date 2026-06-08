@@ -25,9 +25,10 @@ public class ItemMenuListener implements Listener {
     private static final ItemCategory[] CATEGORY_SLOTS = new ItemCategory[54];
 
     static {
-        CATEGORY_SLOTS[20] = ItemCategory.SEEDS;
-        CATEGORY_SLOTS[22] = ItemCategory.ESSENCES;
-        CATEGORY_SLOTS[24] = ItemCategory.STATIONS;
+        CATEGORY_SLOTS[19] = ItemCategory.SEEDS;
+        CATEGORY_SLOTS[21] = ItemCategory.ESSENCES;
+        CATEGORY_SLOTS[23] = ItemCategory.STATIONS;
+        CATEGORY_SLOTS[25] = ItemCategory.MACHINES;
     }
 
     public static void openCategoryMenu(Player player) {

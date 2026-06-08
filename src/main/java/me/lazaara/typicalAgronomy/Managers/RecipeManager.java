@@ -23,6 +23,13 @@ public class RecipeManager {
         return null;
     }
 
+    public static CustomRecipe matchRecipe(ItemStack[] grid) {
+        for (CustomRecipe recipe : recipes) {
+            if (recipe.matches(grid)) return recipe;
+        }
+        return null;
+    }
+
     public static List<CustomRecipe> getAll() {
         return recipes;
     }

@@ -4,15 +4,15 @@ import me.lazaara.typicalAgronomy.Crops.CustomCrop;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class CropRegistry {
 
-    private static final List<CustomCrop> crops = new ArrayList<>();
+    private static final Map<String, CustomCrop> crops = new HashMap<>();
 
     public static void registerCrop(CustomCrop crop) {
-        crops.add(crop);
+        crops.put(crop.getCropKey(), crop);
     }
 
     // Find a crop definition by matching the held item against its registered seed
@@ -22,8 +22,8 @@ public class CropRegistry {
         ItemMeta heldMeta = item.getItemMeta();
         if (heldMeta == null || !heldMeta.hasDisplayName()) return null;
 
-        for (CustomCrop crop : crops) {
-            ItemStack seed = ItemManager.getItemStack(crop.getSeedItemID());
+        for (CustomCrop crop : crops.values()) {
+            ItemStack seed = crop.getSeedItem();
             if (seed == null) continue;
             ItemMeta seedMeta = seed.getItemMeta();
             if (seedMeta == null || !seedMeta.hasDisplayName()) continue;
@@ -37,12 +37,9 @@ public class CropRegistry {
 
     }
 
-    // Find a crop definition by its seed item ID
-    public static CustomCrop findByID(int seedItemID) {
-        for (CustomCrop crop : crops) {
-            if (crop.getSeedItemID() == seedItemID) return crop;
-        }
-        return null;
+    // Find a crop definition by its string key
+    public static CustomCrop findByKey(String cropKey) {
+        return crops.get(cropKey);
     }
 
 }

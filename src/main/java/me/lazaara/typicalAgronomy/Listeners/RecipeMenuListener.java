@@ -43,9 +43,10 @@ public class RecipeMenuListener implements Listener {
     private static final Map<UUID, CustomRecipe> playerRecipe = new HashMap<>();
 
     static {
-        CATEGORY_SLOTS[20] = ItemCategory.SEEDS;
-        CATEGORY_SLOTS[22] = ItemCategory.ESSENCES;
-        CATEGORY_SLOTS[24] = ItemCategory.STATIONS;
+        CATEGORY_SLOTS[19] = ItemCategory.SEEDS;
+        CATEGORY_SLOTS[21] = ItemCategory.ESSENCES;
+        CATEGORY_SLOTS[23] = ItemCategory.STATIONS;
+        CATEGORY_SLOTS[25] = ItemCategory.MACHINES;
     }
 
     public static void openCategoryMenu(Player player) {

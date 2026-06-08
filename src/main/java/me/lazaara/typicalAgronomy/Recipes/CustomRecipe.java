@@ -44,6 +44,9 @@ public abstract class CustomRecipe {
             return metaA.getDisplayName().equals(metaB.getDisplayName());
         }
 
+        // Pattern is vanilla — reject custom items of the same material
+        if (metaB != null && metaB.hasDisplayName()) return false;
+
         return true;
 
     }

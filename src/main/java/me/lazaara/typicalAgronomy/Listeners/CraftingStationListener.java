@@ -2,6 +2,7 @@ package me.lazaara.typicalAgronomy.Listeners;
 
 import me.lazaara.typicalAgronomy.Managers.ItemManager;
 import me.lazaara.typicalAgronomy.Managers.RecipeManager;
+import me.lazaara.typicalAgronomy.Recipes.CustomRecipe;
 import me.lazaara.typicalAgronomy.Listeners.RecipeMenuListener;
 import me.lazaara.typicalAgronomy.Items.CraftingStation;
 import me.lazaara.typicalAgronomy.TypicalAgronomy;
@@ -16,8 +17,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
@@ -92,11 +95,30 @@ public class CraftingStationListener implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         if (!GUI_TITLE.equals(event.getView().getTitle())) return;
 
+        // Prevent double-click collect-to-cursor from sweeping items out of input slots
+        if (event.getAction() == InventoryAction.COLLECT_TO_CURSOR) {
+            event.setCancelled(true);
+            return;
+        }
+
         int slot = event.getRawSlot();
 
-        // Shift-click from player inventory into GUI — recalculate output after it resolves
+        // Shift-click from player inventory: manually route to first empty input slot
         if (slot >= 54) {
             if (event.isShiftClick()) {
+                event.setCancelled(true);
+                ItemStack item = event.getCurrentItem();
+                if (item != null && item.getType() != Material.AIR) {
+                    Inventory stationInv = event.getInventory();
+                    for (int inputSlot : INPUT_SLOTS_ORDERED) {
+                        ItemStack existing = stationInv.getItem(inputSlot);
+                        if (existing == null || existing.getType() == Material.AIR) {
+                            stationInv.setItem(inputSlot, item.clone());
+                            event.setCurrentItem(null);
+                            break;
+                        }
+                    }
+                }
                 plugin.getServer().getScheduler().runTaskLater(plugin,
                         () -> updateOutput(event.getInventory()), 1L);
             }
@@ -116,13 +138,68 @@ public class CraftingStationListener implements Listener {
 
         if (slot == OUTPUT_SLOT) {
             event.setCancelled(true);
-            ItemStack output = event.getInventory().getItem(OUTPUT_SLOT);
+            Inventory inv = event.getInventory();
+            ItemStack output = inv.getItem(OUTPUT_SLOT);
             if (output == null || output.getType() == Material.AIR) return;
-            if (RecipeManager.match(getGrid(event.getInventory())) == null) return;
 
-            INPUT_SLOTS.forEach(s -> event.getInventory().setItem(s, null));
-            player.getInventory().addItem(output.clone());
-            event.getInventory().setItem(OUTPUT_SLOT, null);
+            CustomRecipe recipe = RecipeManager.matchRecipe(getGrid(inv));
+            if (recipe == null) return;
+
+            ItemStack[] displayGrid = recipe.getDisplayGrid();
+
+            if (event.isShiftClick()) {
+                // Calculate max crafts based on smallest ingredient stack
+                int maxCrafts = Integer.MAX_VALUE;
+                for (int i = 0; i < 9; i++) {
+                    if (displayGrid[i] == null) continue;
+                    ItemStack existing = inv.getItem(INPUT_SLOTS_ORDERED.get(i));
+                    if (existing == null || existing.getType() == Material.AIR) { maxCrafts = 0; break; }
+                    maxCrafts = Math.min(maxCrafts, existing.getAmount());
+                }
+                if (maxCrafts == Integer.MAX_VALUE || maxCrafts == 0) return;
+
+                // Consume exactly maxCrafts of each ingredient
+                for (int i = 0; i < 9; i++) {
+                    if (displayGrid[i] == null) continue;
+                    int inputSlot = INPUT_SLOTS_ORDERED.get(i);
+                    ItemStack existing = inv.getItem(inputSlot);
+                    int newAmount = existing.getAmount() - maxCrafts;
+                    if (newAmount <= 0) inv.setItem(inputSlot, null);
+                    else existing.setAmount(newAmount);
+                }
+
+                // Give all results in max-stack batches
+                int remaining = maxCrafts;
+                while (remaining > 0) {
+                    ItemStack batch = recipe.getResult();
+                    batch.setAmount(Math.min(remaining, batch.getMaxStackSize()));
+                    player.getInventory().addItem(batch);
+                    remaining -= batch.getAmount();
+                }
+            } else {
+                // Normal click: consume exactly 1 of each ingredient
+                for (int i = 0; i < 9; i++) {
+                    if (displayGrid[i] == null) continue;
+                    int inputSlot = INPUT_SLOTS_ORDERED.get(i);
+                    ItemStack existing = inv.getItem(inputSlot);
+                    if (existing == null) continue;
+                    if (existing.getAmount() <= 1) inv.setItem(inputSlot, null);
+                    else existing.setAmount(existing.getAmount() - 1);
+                }
+                ItemStack result = recipe.getResult();
+                ItemStack cursor = player.getItemOnCursor();
+                if (cursor == null || cursor.getType() == Material.AIR) {
+                    player.setItemOnCursor(result);
+                } else if (cursor.isSimilar(result) && cursor.getAmount() + result.getAmount() <= cursor.getMaxStackSize()) {
+                    cursor.setAmount(cursor.getAmount() + result.getAmount());
+                    player.setItemOnCursor(cursor);
+                } else {
+                    player.getInventory().addItem(result);
+                }
+            }
+
+            updateOutput(inv);
+            player.updateInventory();
             return;
         }
 
@@ -213,8 +290,31 @@ public class CraftingStationListener implements Listener {
 
     }
 
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (!GUI_TITLE.equals(event.getView().getTitle())) return;
+        for (int slot : event.getRawSlots()) {
+            if (slot < 54 && !INPUT_SLOTS.contains(slot)) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+        // Drag is valid — update output after it settles
+        plugin.getServer().getScheduler().runTaskLater(plugin,
+                () -> updateOutput(event.getInventory()), 1L);
+    }
+
     private void updateOutput(Inventory inv) {
         inv.setItem(OUTPUT_SLOT, RecipeManager.match(getGrid(inv)));
+    }
+
+    private static ItemStack makeFiller() {
+        ItemStack filler = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        ItemMeta meta = filler.getItemMeta();
+        assert meta != null;
+        meta.setDisplayName(" ");
+        filler.setItemMeta(meta);
+        return filler;
     }
 
     private ItemStack[] getGrid(Inventory inv) {

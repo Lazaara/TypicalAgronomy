@@ -1,7 +1,6 @@
 package me.lazaara.typicalAgronomy.Commands;
 
 import me.lazaara.typicalAgronomy.Listeners.ItemMenuListener;
-import me.lazaara.typicalAgronomy.Managers.ItemManager;
 import me.lazaara.typicalAgronomy.TypicalAgronomy;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -39,56 +38,16 @@ public class TypicalAgronomyCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("items")) {
 
             if (!(sender instanceof Player player)) {
-                sender.sendMessage(plugin.getLang("messages.getitem.player-only"));
+                sender.sendMessage(plugin.getLang("messages.items.player-only"));
                 return true;
             }
 
             if (!player.hasPermission("typicalAgronomy.items")) {
-                player.sendMessage(plugin.getLang("messages.getitem.no-permission"));
+                player.sendMessage(plugin.getLang("messages.items.no-permission"));
                 return true;
             }
 
             ItemMenuListener.openCategoryMenu(player);
-            return true;
-
-        }
-
-        if (args[0].equalsIgnoreCase("getitem")) {
-
-            if (!(sender instanceof Player)) {
-                sender.sendMessage(plugin.getLang("messages.getitem.player-only"));
-                return true;
-            }
-
-            Player player = (Player) sender;
-
-            if (!player.hasPermission("typicalAgronomy.getitem")) {
-                player.sendMessage(plugin.getLang("messages.getitem.no-permission"));
-                return true;
-            }
-
-            if (args.length < 2) {
-                player.sendMessage(plugin.getLang("messages.getitem.usage"));
-                return true;
-            }
-
-            try {
-
-                int itemID = Integer.parseInt(args[1]);
-
-                if (!ItemManager.itemList.containsKey(itemID)) {
-                    player.sendMessage(plugin.getLang("messages.getitem.not-found"));
-                    return true;
-                }
-
-                ItemManager.GiveItem(itemID, player);
-
-            } catch (NumberFormatException e) {
-
-                player.sendMessage(plugin.getLang("messages.getitem.invalid-id"));
-
-            }
-
             return true;
 
         }
@@ -103,12 +62,6 @@ public class TypicalAgronomyCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 1) {
             return List.of("items", "reload");
-        }
-
-        if (args.length == 2 && args[0].equalsIgnoreCase("getitem")) {
-            return ItemManager.itemList.keySet().stream()
-                    .map(String::valueOf)
-                    .collect(java.util.stream.Collectors.toList());
         }
 
         return List.of();
