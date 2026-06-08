@@ -24,6 +24,7 @@ import me.lazaara.typicalAgronomy.Items.SuperiorEssence;
 import me.lazaara.typicalAgronomy.Items.SuperiorSeed;
 import me.lazaara.typicalAgronomy.Managers.CropRegistry;
 import me.lazaara.typicalAgronomy.Managers.ItemManager;
+import me.lazaara.typicalAgronomy.Managers.MaterialCropManager;
 import me.lazaara.typicalAgronomy.Managers.RecipeManager;
 import me.lazaara.typicalAgronomy.Recipes.ShapedCustomRecipe;
 import me.lazaara.typicalAgronomy.Recipes.StationType;
@@ -53,10 +54,11 @@ public final class TypicalAgronomy extends JavaPlugin {
         lang = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "lang.yml"));
 
         registerCommands();
-        registerEvents();
         registerRecipes();
         registerCrops();
         registerCustomRecipes();
+        MaterialCropManager.registerAll();
+        registerEvents();
 
     }
 

@@ -1,7 +1,9 @@
 package me.lazaara.typicalAgronomy.Listeners;
 
+import me.lazaara.typicalAgronomy.Items.ItemCategory;
 import me.lazaara.typicalAgronomy.Managers.CropManager;
 import me.lazaara.typicalAgronomy.Managers.CropRegistry;
+import me.lazaara.typicalAgronomy.Managers.ItemManager;
 import me.lazaara.typicalAgronomy.Crops.CustomCrop;
 import me.lazaara.typicalAgronomy.TypicalAgronomy;
 import org.bukkit.Bukkit;
@@ -24,6 +26,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockFertilizeEvent;
 import org.bukkit.event.block.BlockGrowEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -98,6 +101,19 @@ public class CropListener implements Listener {
     }
 
     @EventHandler
+    public void onCustomItemPlace(PlayerInteractEvent event) {
+
+        if (event.getHand() != EquipmentSlot.HAND) return;
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+
+        ItemCategory category = ItemManager.getCategoryForItem(event.getItem());
+        if (category == ItemCategory.ESSENCES) {
+            event.setCancelled(true);
+        }
+
+    }
+
+    @EventHandler
     public void onPlant(PlayerInteractEvent event) {
 
         if (event.getHand() != EquipmentSlot.HAND) return;
@@ -161,6 +177,21 @@ public class CropListener implements Listener {
         for (ItemStack drop : crop.getDrops()) {
             event.getBlock().getWorld().dropItemNaturally(loc, drop);
         }
+
+    }
+
+    @EventHandler
+    public void onFarmlandTrample(EntityChangeBlockEvent event) {
+
+        if (event.getBlock().getType() != Material.FARMLAND) return;
+        if (event.getTo() != Material.DIRT) return;
+
+        Location cropLoc = event.getBlock().getLocation().add(0, 1, 0);
+        String cropKey = CropManager.trackedCrops.remove(cropLoc);
+        if (cropKey == null) return;
+
+        event.setCancelled(true);
+        CropManager.trackedCrops.put(cropLoc, cropKey);
 
     }
 

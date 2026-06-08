@@ -15,7 +15,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +27,9 @@ public class RecipeMenuListener implements Listener {
     private static final String MOCK_TITLE     = ChatColor.DARK_GREEN + "Recipe View";
 
     private static final int BACK_SLOT    = 45;
+    private static final int PREV_SLOT    = 51;
+    private static final int PAGE_SLOT    = 52;
+    private static final int NEXT_SLOT    = 53;
     private static final int ARROW_SLOT   = 23;
     private static final int OUTPUT_SLOT  = 25;
     private static final int STATION_SLOT = 32;
@@ -41,6 +43,8 @@ public class RecipeMenuListener implements Listener {
     private static final Map<UUID, ItemCategory> playerCategory = new HashMap<>();
     // Tracks which recipe a player is viewing (matched by result display name)
     private static final Map<UUID, CustomRecipe> playerRecipe = new HashMap<>();
+    // Tracks current page per player
+    private static final Map<UUID, Integer> playerPage = new HashMap<>();
 
     static {
         CATEGORY_SLOTS[19] = ItemCategory.SEEDS;
@@ -65,9 +69,10 @@ public class RecipeMenuListener implements Listener {
 
     }
 
-    private static void openRecipeList(Player player, ItemCategory category) {
+    private static void openRecipeList(Player player, ItemCategory category, int page) {
 
         playerCategory.put(player.getUniqueId(), category);
+        playerPage.put(player.getUniqueId(), page);
 
         String title = LIST_PREFIX + category.getDisplayName();
         Inventory inv = player.getServer().createInventory(null, 54, title);
@@ -77,9 +82,15 @@ public class RecipeMenuListener implements Listener {
         inv.setItem(BACK_SLOT, ItemMenuListener.makeBackButton());
 
         List<CustomRecipe> recipes = RecipeManager.getByCategory(category);
-        for (int i = 0; i < recipes.size() && i < 45; i++) {
-            inv.setItem(i, recipes.get(i).getResult());
+        int totalPages = Math.max(1, (int) Math.ceil(recipes.size() / 45.0));
+        int start = page * 45;
+        for (int i = start; i < Math.min(start + 45, recipes.size()); i++) {
+            inv.setItem(i - start, recipes.get(i).getResult());
         }
+
+        if (page > 0)              inv.setItem(PREV_SLOT, ItemMenuListener.makePrevButton());
+        inv.setItem(PAGE_SLOT, ItemMenuListener.makePageIndicator(page + 1, totalPages));
+        if (page < totalPages - 1) inv.setItem(NEXT_SLOT, ItemMenuListener.makeNextButton());
 
         player.openInventory(inv);
 
@@ -141,7 +152,7 @@ public class RecipeMenuListener implements Listener {
 
         if (isCategoryMenu) {
             ItemCategory cat = CATEGORY_SLOTS[slot];
-            if (cat != null) openRecipeList(player, cat);
+            if (cat != null) openRecipeList(player, cat, 0);
             return;
         }
 
@@ -150,6 +161,25 @@ public class RecipeMenuListener implements Listener {
                 openCategoryMenu(player);
                 return;
             }
+
+            if (slot == PREV_SLOT) {
+                int page = playerPage.getOrDefault(player.getUniqueId(), 0);
+                ItemCategory cat = playerCategory.get(player.getUniqueId());
+                if (page > 0 && cat != null) openRecipeList(player, cat, page - 1);
+                return;
+            }
+
+            if (slot == NEXT_SLOT) {
+                ItemStack item = event.getCurrentItem();
+                if (item == null || item.getType() == Material.GRAY_STAINED_GLASS_PANE) return;
+                int page = playerPage.getOrDefault(player.getUniqueId(), 0);
+                ItemCategory cat = playerCategory.get(player.getUniqueId());
+                if (cat != null) openRecipeList(player, cat, page + 1);
+                return;
+            }
+
+            if (slot == PAGE_SLOT) return;
+
             ItemStack clicked = event.getCurrentItem();
             if (clicked == null || clicked.getType() == Material.AIR
                     || clicked.getType() == Material.GRAY_STAINED_GLASS_PANE) return;
@@ -169,8 +199,12 @@ public class RecipeMenuListener implements Listener {
         // Mock view
         if (slot == BACK_SLOT) {
             ItemCategory cat = playerCategory.get(player.getUniqueId());
-            if (cat != null) openRecipeList(player, cat);
-            else openCategoryMenu(player);
+            if (cat != null) {
+                int page = playerPage.getOrDefault(player.getUniqueId(), 0);
+                openRecipeList(player, cat, page);
+            } else {
+                openCategoryMenu(player);
+            }
         }
 
     }
